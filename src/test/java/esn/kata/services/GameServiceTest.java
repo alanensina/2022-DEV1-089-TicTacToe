@@ -173,6 +173,37 @@ public class GameServiceTest {
         Assertions.assertEquals("Invalid move, position is already occupied!", message);
     }
 
+    @Test
+    public void should_be_able_to_finish_the_game_with_a_winner() {
+        var dto = new RequestDTO(1L, "X", 2);
+        var game = new Game(1L, false, "X", Arrays.asList("X", "X", null, null, null, null, "O", null, "O"));
+        Mockito.when(repository.findById(1L)).thenReturn(Optional.of(game));
+
+        var gameToBeSaved = new Game(1L, true, "X", Arrays.asList("X", "X", "X", null, null, null, "O", null, "O"));
+        Mockito.when(repository.save(any(Game.class))).thenReturn(gameToBeSaved);
+
+        var response = service.play(dto);
+        var message = response.getBody().getMessages().get(0);
+        Assertions.assertEquals(HttpStatus.OK.value(), response.getStatusCode().value());
+        Assertions.assertEquals("Game is over, Player: X is the winner.", message);
+    }
+
+    @Test
+    public void should_be_able_to_finish_the_game_with_a_draw() {
+        var dto = new RequestDTO(1L, "X", 6);
+        var game = new Game(1L, false, "X", Arrays.asList("X", "O", "O", "O", "X", "X", null, "X", "O"));
+        Optional.of(game);
+        Mockito.when(repository.findById(1L)).thenReturn(Optional.of(game));
+
+        var gameToBeSaved = new Game(1L, true, "X", Arrays.asList("X", "O", "O", "O", "X", "X", "X", "X", "O"));
+        Mockito.when(repository.save(any(Game.class))).thenReturn(gameToBeSaved);
+
+        var response = service.play(dto);
+        var message = response.getBody().getMessages().get(0);
+        Assertions.assertEquals(HttpStatus.OK.value(), response.getStatusCode().value());
+        Assertions.assertEquals("Game is over, there's no winner.", message);
+    }
+
     private static List<String> getEmptyPositions() {
         return Arrays.asList(null, null, null, null, null, null, null, null, null);
     }

@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 @Service
 public class GameService {
@@ -55,7 +56,58 @@ public class GameService {
         var error = validateMove(dto, response, game);
         if (error != null) return error;
 
+        var board = updateBoard(dto, game);
+
+        game.setNextPlayer(game.getNextPlayer().equalsIgnoreCase("X") ? "O" : "X");
+        var gameIsOver = checkIfGameIsOver(dto, response, game, board);
+        if (gameIsOver != null) return gameIsOver;
+
         return null;
+    }
+
+    private ResponseEntity<ResponseDTO> checkIfGameIsOver(RequestDTO dto, ResponseDTO response, Game game, List<String> board) {
+        if (checkWinner(board, dto.getPlayer())) {
+            response.setMessages(Arrays.asList("Game is over, Player: " + dto.getPlayer() + " is the winner."));
+            game.setFinished(true);
+            repository.save(game);
+            response.setGames(Arrays.asList(game));
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }
+
+        if (checkFullBoard(board)) {
+            response.setMessages(Arrays.asList("Game is over, there's no winner."));
+            game.setFinished(true);
+            repository.save(game);
+            response.setGames(Arrays.asList(game));
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }
+        return null;
+    }
+
+    private boolean checkWinner(List<String> positions, String player) {
+        return (player.equalsIgnoreCase(positions.get(0)) && player.equalsIgnoreCase(positions.get(1)) && player.equalsIgnoreCase(positions.get(2))) ||
+                (player.equalsIgnoreCase(positions.get(3)) && player.equalsIgnoreCase(positions.get(4)) && player.equalsIgnoreCase(positions.get(5))) ||
+                (player.equalsIgnoreCase(positions.get(6)) && player.equalsIgnoreCase(positions.get(7)) && player.equalsIgnoreCase(positions.get(8))) ||
+                (player.equalsIgnoreCase(positions.get(0)) && player.equalsIgnoreCase(positions.get(4)) && player.equalsIgnoreCase(positions.get(8))) ||
+                (player.equalsIgnoreCase(positions.get(2)) && player.equalsIgnoreCase(positions.get(4)) && player.equalsIgnoreCase(positions.get(6))) ||
+                (player.equalsIgnoreCase(positions.get(0)) && player.equalsIgnoreCase(positions.get(3)) && player.equalsIgnoreCase(positions.get(6))) ||
+                (player.equalsIgnoreCase(positions.get(1)) && player.equalsIgnoreCase(positions.get(4)) && player.equalsIgnoreCase(positions.get(7))) ||
+                (player.equalsIgnoreCase(positions.get(2)) && player.equalsIgnoreCase(positions.get(5)) && player.equalsIgnoreCase(positions.get(8)));
+    }
+
+    private boolean checkFullBoard(List<String> positions) {
+        for (String position : positions) {
+            if (position == null) return false;
+        }
+
+        return true;
+    }
+
+    private List<String> updateBoard(RequestDTO dto, Game game) {
+        var updatedPositions = game.getPositions();
+        updatedPositions.set(dto.getPosition(), dto.getPlayer());
+        game.setPositions(updatedPositions);
+        return updatedPositions;
     }
 
     private ResponseEntity<ResponseDTO> validateMove(RequestDTO dto, ResponseDTO response, Game game) {
