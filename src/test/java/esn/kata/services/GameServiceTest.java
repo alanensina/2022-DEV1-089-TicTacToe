@@ -127,6 +127,52 @@ public class GameServiceTest {
         Assertions.assertEquals("Position must be greater or equal than zero and lesser or equal than 8.", message);
     }
 
+    @Test
+    public void should_not_be_able_to_play_if_the_id_is_invalid() {
+        Mockito.when(repository.findById(17L)).thenReturn(Optional.empty());
+        var dto = new RequestDTO(17L, "X", 0);
+        var response = service.play(dto);
+        var message = response.getBody().getMessages().get(0);
+        Assertions.assertEquals(HttpStatus.NOT_FOUND.value(), response.getStatusCode().value());
+        Assertions.assertEquals("Game not found!", message);
+    }
+
+    @Test
+    public void should_not_be_able_to_play_if_its_not_your_move() {
+        var dto = new RequestDTO(1L, "O", 0);
+        var game = new Game(1L, false, "X", getEmptyPositions());
+        Optional.of(game);
+        Mockito.when(repository.findById(1L)).thenReturn(Optional.of(game));
+        var response = service.play(dto);
+        var message = response.getBody().getMessages().get(0);
+        Assertions.assertEquals(HttpStatus.BAD_REQUEST.value(), response.getStatusCode().value());
+        Assertions.assertEquals("Player not allowed to play!", message);
+    }
+
+    @Test
+    public void should_not_be_able_to_play_if_the_game_is_over() {
+        var dto = new RequestDTO(1L, "X", 4);
+        var game = new Game(1L, true, "X", Arrays.asList("X", "X", "X", "O", null, null, null, "O", null));
+        Optional.of(game);
+        Mockito.when(repository.findById(1L)).thenReturn(Optional.of(game));
+        var response = service.play(dto);
+        var message = response.getBody().getMessages().get(0);
+        Assertions.assertEquals(HttpStatus.BAD_REQUEST.value(), response.getStatusCode().value());
+        Assertions.assertEquals("This game is already finished!", message);
+    }
+
+    @Test
+    public void should_not_be_able_to_play_if_the_position_is_occupied() {
+        var dto = new RequestDTO(1L, "O", 0);
+        var game = new Game(1L, false, "O", Arrays.asList("X", null, null, null, null, null, null, null, null));
+        Optional.of(game);
+        Mockito.when(repository.findById(1L)).thenReturn(Optional.of(game));
+        var response = service.play(dto);
+        var message = response.getBody().getMessages().get(0);
+        Assertions.assertEquals(HttpStatus.BAD_REQUEST.value(), response.getStatusCode().value());
+        Assertions.assertEquals("Invalid move, position is already occupied!", message);
+    }
+
     private static List<String> getEmptyPositions() {
         return Arrays.asList(null, null, null, null, null, null, null, null, null);
     }

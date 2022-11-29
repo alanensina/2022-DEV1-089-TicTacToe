@@ -46,6 +46,35 @@ public class GameService {
             return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
 
+        var game = repository.findById(dto.getId()).orElse(null);
+        if (game == null) {
+            response.setMessages(Arrays.asList("Game not found!"));
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+        }
+
+        var error = validateMove(dto, response, game);
+        if (error != null) return error;
+
+        return null;
+    }
+
+    private ResponseEntity<ResponseDTO> validateMove(RequestDTO dto, ResponseDTO response, Game game) {
+        if (!game.getNextPlayer().equalsIgnoreCase(dto.getPlayer())) {
+            response.setMessages(Arrays.asList("Player not allowed to play!"));
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        }
+
+        if (game.isFinished()) {
+            response.setMessages(Arrays.asList("This game is already finished!"));
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        }
+
+        var positionOnBoard = game.getPositions().get(dto.getPosition());
+        if (positionOnBoard != null) {
+            response.setMessages(Arrays.asList("Invalid move, position is already occupied!"));
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        }
+
         return null;
     }
 
