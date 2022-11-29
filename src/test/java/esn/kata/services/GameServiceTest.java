@@ -1,6 +1,7 @@
 package esn.kata.services;
 
 import esn.kata.models.Game;
+import esn.kata.models.dto.RequestDTO;
 import esn.kata.repositories.GameRepository;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
@@ -94,6 +95,36 @@ public class GameServiceTest {
         var message = response.getBody().getMessages().get(0);
         Assertions.assertEquals(HttpStatus.NOT_FOUND.value(), response.getStatusCode().value());
         Assertions.assertEquals("Game not found!", message);
+    }
+
+    @Test
+    public void should_not_be_able_to_make_a_move_with_id_null() {
+        var dto = new RequestDTO(null, "X", 0);
+        Mockito.when(repository.findById(null)).thenReturn(Optional.empty());
+        var response = service.play(dto);
+        var message = response.getBody().getMessages().get(0);
+        Assertions.assertEquals(HttpStatus.BAD_REQUEST.value(), response.getStatusCode().value());
+        Assertions.assertEquals("Id can't be null", message);
+    }
+
+    @Test
+    public void should_not_be_able_to_make_a_move_with_player_null() {
+        var dto = new RequestDTO(1L, null, 0);
+        Mockito.when(repository.findById(1L)).thenReturn(Optional.empty());
+        var response = service.play(dto);
+        var message = response.getBody().getMessages().get(0);
+        Assertions.assertEquals(HttpStatus.BAD_REQUEST.value(), response.getStatusCode().value());
+        Assertions.assertEquals("Player can't be null", message);
+    }
+
+    @Test
+    public void should_not_be_able_to_make_a_move_with_position_invalid() {
+        var dto = new RequestDTO(1L, "X", 10);
+        Mockito.when(repository.findById(1L)).thenReturn(Optional.empty());
+        var response = service.play(dto);
+        var message = response.getBody().getMessages().get(0);
+        Assertions.assertEquals(HttpStatus.BAD_REQUEST.value(), response.getStatusCode().value());
+        Assertions.assertEquals("Position must be greater or equal than zero and lesser or equal than 8.", message);
     }
 
     private static List<String> getEmptyPositions() {

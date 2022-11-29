@@ -1,13 +1,11 @@
 package esn.kata.controllers;
 
+import esn.kata.models.dto.RequestDTO;
 import esn.kata.models.dto.ResponseDTO;
 import esn.kata.services.GameService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 public class GameController {
@@ -21,12 +19,17 @@ public class GameController {
     }
 
     @GetMapping("/list")
-    public ResponseEntity<ResponseDTO> list(){
+    public ResponseEntity<ResponseDTO> list() {
         return service.listGames();
     }
 
     @GetMapping("/find/{id}")
-    public ResponseEntity<ResponseDTO> find(@PathVariable Long id){
+    public ResponseEntity<ResponseDTO> find(@PathVariable Long id) {
         return service.findById(id);
+    }
+
+    @PutMapping("/play")
+    public ResponseEntity<ResponseDTO> play(@RequestBody RequestDTO dto) {
+        return service.play(dto);
     }
 }
