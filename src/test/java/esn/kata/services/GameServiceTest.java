@@ -204,6 +204,26 @@ public class GameServiceTest {
         Assertions.assertEquals("Game is over, there's no winner.", message);
     }
 
+    @Test
+    public void should_be_able_to_make_a_valid_move() {
+        var dto = new RequestDTO(1L, "X", 0);
+        var game = new Game(1L, false, "X", getEmptyPositions());
+        Optional.of(game);
+        Mockito.when(repository.findById(1L)).thenReturn(Optional.of(game));
+
+        var gameToBeSaved = new Game(1L, false, "O", Arrays.asList("X", null, null, null, null, null, null, null, null));
+        Mockito.when(repository.save(any(Game.class))).thenReturn(gameToBeSaved);
+
+        var response = service.play(dto);
+        var gameUpdated = response.getBody().getGames().get(0);
+
+
+        Assertions.assertEquals(HttpStatus.OK.value(), response.getStatusCode().value());
+        Assertions.assertEquals("O", gameUpdated.getNextPlayer());
+        Assertions.assertEquals(false, gameUpdated.isFinished());
+        Assertions.assertEquals(Arrays.asList("X", null, null, null, null, null, null, null, null), gameUpdated.getPositions());
+    }
+
     private static List<String> getEmptyPositions() {
         return Arrays.asList(null, null, null, null, null, null, null, null, null);
     }

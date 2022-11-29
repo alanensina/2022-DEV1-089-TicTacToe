@@ -2,6 +2,7 @@ package esn.kata.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import esn.kata.models.Game;
+import esn.kata.models.dto.RequestDTO;
 import esn.kata.models.dto.ResponseDTO;
 import esn.kata.repositories.GameRepository;
 import org.junit.Test;
@@ -12,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -74,6 +76,20 @@ public class GameControllerTest {
         var jsonResponse = mockMvc.perform(get("/find/22")).andExpect(status().isNotFound()).andReturn().getResponse().getContentAsString();
         var response = mapper.readValue(jsonResponse, ResponseDTO.class);
         Assertions.assertEquals("Game not found!", response.getMessages().get(0));
+    }
+
+    @Test
+    public void should_be_able_to_make_a_valid_move() throws Exception {
+        var json = mapper.writeValueAsString(new RequestDTO(1L, "X", 0));
+        var game = new Game(1L, false, "X", getEmptyPositions());
+        var gameToBeSaved = new Game(1L, true, "X", Arrays.asList("X", "X", "X", null, null, null, "O", null, "O"));
+
+        Mockito.when(repository.findById(1L)).thenReturn(Optional.of(game));
+        Mockito.when(repository.save(any(Game.class))).thenReturn(gameToBeSaved);
+
+        var responseJson = mockMvc.perform(put("/play").content(json).contentType(MediaType.APPLICATION_JSON)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        var response = mapper.readValue(responseJson, ResponseDTO.class);
+        Assertions.assertEquals(1, response.getGames().size());
     }
 
     private static List<String> getEmptyPositions() {

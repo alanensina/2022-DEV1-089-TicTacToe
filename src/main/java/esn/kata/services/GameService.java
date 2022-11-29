@@ -62,7 +62,10 @@ public class GameService {
         var gameIsOver = checkIfGameIsOver(dto, response, game, board);
         if (gameIsOver != null) return gameIsOver;
 
-        return null;
+        repository.save(game);
+        response.setGames(Arrays.asList(game));
+        response.setMessages(null);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     private ResponseEntity<ResponseDTO> checkIfGameIsOver(RequestDTO dto, ResponseDTO response, Game game, List<String> board) {
