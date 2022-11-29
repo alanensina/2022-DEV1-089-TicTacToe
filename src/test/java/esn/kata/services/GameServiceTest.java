@@ -15,6 +15,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 
@@ -43,6 +44,56 @@ public class GameServiceTest {
         var response = service.startGame();
         Assertions.assertEquals(HttpStatus.CREATED.value(), response.getStatusCode().value());
         Assertions.assertEquals("Game started. ID: " + game.getId(), response.getBody());
+    }
+
+    @Test
+    public void should_not_be_able_to_start_a_game_if_did_not_save() {
+        var game = new Game(null, false, "X", getEmptyPositions());
+        Mockito.when(repository.save(any(Game.class))).thenReturn(game);
+
+        var response = service.startGame();
+        Assertions.assertEquals(HttpStatus.BAD_REQUEST.value(), response.getStatusCode().value());
+        Assertions.assertEquals("Error to start a game.", response.getBody());
+    }
+
+    @Test
+    public void should_be_able_to_list_all_games() {
+        var games = Arrays.asList(
+                new Game(1L, true, "X", Arrays.asList("X", "X", "X", null, null, "O", null, null, "O")),
+                new Game(2L, false, "O", Arrays.asList("X", null, null, null, null, null, null, null, null)),
+                new Game(3L, false, "O", Arrays.asList(null, null, "X", null, null, "O", null, null, "X")),
+                new Game(4L, false, "X", Arrays.asList("X", "O", "X", "O", null, null, null, null, null))
+        );
+
+        Mockito.when(repository.findAll()).thenReturn(games);
+
+        var response = service.listGames();
+        var body = response.getBody();
+        Assertions.assertEquals(HttpStatus.OK.value(), response.getStatusCode().value());
+        Assertions.assertEquals(4, body.getGames().size());
+        Assertions.assertTrue(body.getGames().get(0).isFinished());
+    }
+
+    @Test
+    public void should_be_able_to_find_by_id() {
+        var game = new Game(1L, true, "X", Arrays.asList("X", "X", "X", null, null, "O", null, null, "O"));
+        Mockito.when(repository.findById(1L)).thenReturn(Optional.of(game));
+
+        var response = service.findById(1L);
+        var games = response.getBody().getGames();
+
+        Assertions.assertEquals(HttpStatus.OK.value(), response.getStatusCode().value());
+        Assertions.assertEquals(1, games.size());
+        Assertions.assertEquals(1L, games.get(0).getId());
+    }
+
+    @Test
+    public void should_not_be_able_to_find_by_id_with_id_incorrect() {
+        Mockito.when(repository.findById(17L)).thenReturn(Optional.empty());
+        var response = service.findById(17L);
+        var message = response.getBody().getMessages().get(0);
+        Assertions.assertEquals(HttpStatus.NOT_FOUND.value(), response.getStatusCode().value());
+        Assertions.assertEquals("Game not found!", message);
     }
 
     private static List<String> getEmptyPositions() {
